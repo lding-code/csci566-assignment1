@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from PIL.Image import new
 
 import numpy as np
 
@@ -56,7 +57,13 @@ class SGDM(Optimizer):
         #############################################################################
         # TODO: Implement the SGD + Momentum                                        #
         #############################################################################
-        pass
+        for n, dv in layer.grads.items():
+            if n in self.velocity:
+                self.velocity[n] = self.momentum * self.velocity[n] - self.lr * dv
+            else:
+                self.velocity[n] = - self.lr * dv
+                self.velocity[n] = - self.lr * dv
+            layer.params[n] += self.velocity[n]
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -75,7 +82,13 @@ class RMSProp(Optimizer):
         #############################################################################
         # TODO: Implement the RMSProp                                               #
         #############################################################################
-        pass
+        for n, dv in layer.grads.items():
+            if n in self.cache:
+                self.cache[n] = self.decay * self.cache[n] + (1 - self.decay) * np.square(dv)
+            else:
+                self.cache[n] = (1 - self.decay) * np.square(dv)
+                self.cache[n] = self.cache[n]
+            layer.params[n] -= self.lr * dv / np.sqrt(self.cache[n] + self.eps)
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -95,8 +108,16 @@ class Adam(Optimizer):
     def update(self, layer):
         #############################################################################
         # TODO: Implement the Adam                                                  #
-        #############################################################################
-        pass
+        for n, dv in layer.grads.items():
+            if n in self.mt:
+                self.mt[n] = self.beta1 * self.mt[n] + (1 - self.beta1) * dv
+                self.vt[n] = self.beta2 * self.vt[n] + (1 - self.beta2) * np.square(dv)
+            else:
+                self.mt[n] = (1 - self.beta1) * dv
+                self.vt[n] = (1 - self.beta2) * np.square(dv)
+            mt_hat = self.mt[n] / (1 - np.power(self.beta1, self.t))
+            vt_hat = self.vt[n] / (1 - np.power(self.beta2, self.t))
+            layer.params[n] -= self.lr * mt_hat / (np.sqrt(vt_hat + self.eps))
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################

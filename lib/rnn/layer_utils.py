@@ -132,7 +132,13 @@ class VanillaRNN(object):
         # Store the results in the variable output provided above as well as       #
         # values needed for the backward pass.                                     #
         ############################################################################
-        pass
+        meta = {}
+        WX = np.dot(x, self.params[self.wx_name])
+        WH = np.dot(prev_h, self.params[self.wh_name])
+        next_h = np.tanh(WX + WH + self.params[self.b_name])
+        meta["x"] = x
+        meta["prev_h"] = prev_h
+        meta["next_h"] = next_h
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -155,7 +161,17 @@ class VanillaRNN(object):
         # Store the computed gradients for current layer in self.grads with         #
         # corresponding name.                                                       # 
         #############################################################################
-        pass
+        dtanh = dnext_h * (1 - np.power(meta["next_h"], 2))
+        
+        dx = np.dot(dtanh, self.params[self.wx_name].T)
+        dprev_h = np.dot(dtanh, self.params[self.wh_name].T)
+        dWx = np.dot(meta["x"].T, dtanh)
+        dWh = np.dot(meta["prev_h"].T, dtanh)
+        db = np.sum(dtanh, axis=0)
+        
+        self.grads[self.wx_name] = dWx
+        self.grads[self.wh_name] = dWh
+        self.grads[self.b_name] = db
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -173,7 +189,17 @@ class VanillaRNN(object):
         # input data. You should use the step_forward function that you defined      #
         # above. You can use a for loop to help compute the forward pass.            #
         ##############################################################################
-        pass
+        T = x.shape[1]
+        N, H = h0.shape
+        h = np.zeros((N, T, H))
+        # first step
+        h[:, 0, :], meta = self.step_forward(x[:, 0, :], h0)
+        self.meta.append(meta)
+        # rest step
+        for t in range(1, T):
+            h[:, t, :], meta = self.step_forward(x[:, t, :], h[:, t - 1, :])
+            self.meta.append(meta)
+        #self.meta = meta
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -199,7 +225,26 @@ class VanillaRNN(object):
         # defined above. You can use a for loop to help compute the backward pass.   #
         # HINT: Gradients of hidden states come from two sources                     #
         ##############################################################################
-        pass
+        N, T, H = dh.shape
+        D = self.meta[0]["x"].shape[-1]
+        dx = np.zeros((N, T, D))
+        dprev_h = np.zeros((N, H))
+        dWx = np.zeros((D, H))
+        dWh = np.zeros((H, H))
+        db = np.zeros(H)
+        
+        for t in reversed(range(T)):
+            dxt, dprev_h, dWxt, dWht, dbt = self.step_backward(dh[:, t, :] + dprev_h, self.meta[t])
+            dx[:, t, :] = dxt
+            dWx += dWxt
+            dWh += dWht
+            db += dbt
+            
+        dh0 = dprev_h
+        
+        self.grads[self.wx_name] = dWx
+        self.grads[self.wh_name] = dWh
+        self.grads[self.b_name] = db
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -384,7 +429,10 @@ class word_embedding(object):
         #                                                                            #
         # HINT: This can be done in one line using NumPy's array indexing.           #
         ##############################################################################
-        pass
+        out = self.params[self.w_name][x]
+        self.meta = {}
+        self.meta["x"] = x
+        self.meta["out"] = out
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -410,7 +458,12 @@ class word_embedding(object):
         # Note that Words can appear more than once in a sequence.                   #
         # HINT: Look up the function np.add.at                                       #
         ##############################################################################
-        pass
+        grad = np.zeros((self.voc_dim, self.vec_dim))
+        for idx in range(dout.shape[0]):
+            grad[self.meta["x"][idx, 0]] += dout[idx, 0]
+            grad[self.meta["x"][idx, 1]] += dout[idx, 1]
+            grad[self.meta["x"][idx, 2]] += dout[idx, 2]
+        self.grads[self.w_name] = grad
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################

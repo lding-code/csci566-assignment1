@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from os import name
 
 from lib.mlp.layer_utils import *
 
@@ -33,7 +34,9 @@ class TestFCReLU(Module):
     def __init__(self, keep_prob=0, dtype=np.float32, seed=None):
         self.net = sequential(
             ########## TODO: ##########
-
+            flatten(name = "flatten_layer"),
+            fc(input_dim = 20, output_dim = 10, name="fc_layer"),
+            relu(name="relu_layer")
             ########### END ###########
         )
 
@@ -42,7 +45,10 @@ class SmallFullyConnectedNetwork(Module):
     def __init__(self, keep_prob=0, dtype=np.float32, seed=None):
         self.net = sequential(
             ########## TODO: ##########
-
+            fc(input_dim = 4, output_dim = 30, name = "l1_fc_1"),
+            relu(name = "l2_relu_1"),
+            fc(input_dim = 30, output_dim = 7, name = "l3_fc_2"),
+            relu(name = "l4_relu_2")
             ########### END ###########
         )
 
@@ -68,7 +74,10 @@ class TinyNet(Module):
         """ Some comments """
         self.net = sequential(
             ########## TODO: ##########
-
+            flatten(name = "l1_flat_1"),
+            fc(input_dim = 3 * 32 * 32, output_dim = 64, name = "l2_fc_1"),
+            relu(name = "l3_relu_1"),
+            fc(input_dim = 64, output_dim = 10, name = "l4_fc_2")
             ########### END ###########
         )
 

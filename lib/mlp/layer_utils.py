@@ -96,6 +96,7 @@ class flatten(object):
         # Store the results in the variable self.meta provided above.               #
         #############################################################################
         pass
+        output = feat.reshape(feat.shape[0], np.prod(feat.shape[1:]))
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -112,7 +113,8 @@ class flatten(object):
         # You need to reshape (flatten) the input gradients and return.             #
         # Store the results in the variable dfeat provided above.                   #
         #############################################################################
-        pass
+        # pass
+        dfeat = dprev.reshape(self.meta.shape)
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -151,7 +153,8 @@ class fc(object):
         # TODO: Implement the forward pass of a single fully connected layer.       #
         # Store the results in the variable output provided above.                  #
         #############################################################################
-        pass
+        #print("fc forward (layer: {})".format(self.name))
+        output = np.dot(feat, self.params[self.w_name]) + self.params[self.b_name]
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -173,7 +176,12 @@ class fc(object):
         # corresponding name.                                                       #
         # Store the output gradients in the variable dfeat provided above.          #
         #############################################################################
-        pass
+        #print("fc backward (layer: {})".format(self.name))
+        self.grads[self.w_name] = np.dot(dprev.transpose(), feat).transpose()
+
+        self.grads[self.b_name] = np.sum(dprev, axis=0).transpose()
+
+        dfeat = np.dot(dprev, self.params[self.w_name].T)
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -201,6 +209,7 @@ class relu(object):
         # Store the results in the variable output provided above.                  #
         #############################################################################
         pass
+        output = np.maximum(0, feat)
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -218,6 +227,9 @@ class relu(object):
         # Store the output gradients in the variable dfeat provided above.          #
         #############################################################################
         pass
+        dfeat = np.zeros(dprev.shape)
+        dfeat[self.meta >= 0] = 1
+        dfeat = dfeat * dprev
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -261,6 +273,16 @@ class dropout(object):
         # Store the results in the variable output provided above.                  #
         #############################################################################
         pass
+        kept = np.ones(feat.shape)
+        if self.keep_prob == 0:
+            self.keep_prob = 1
+        if is_training and (self.keep_prob < 1):
+            kept = self.rng.rand(feat.shape[0], feat.shape[-1])
+            kept[kept < self.keep_prob] = 1
+            kept[kept < 1] = 0
+            kept = kept * 1 / self.keep_prob
+        feat = feat * kept
+        output = feat
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -280,6 +302,11 @@ class dropout(object):
         # Store the output gradients in the variable dfeat provided above.          #
         #############################################################################
         pass
+        if self.is_training and (self.keep_prob < 1):
+            dfeat = dprev * self.kept
+        else:
+            dfeat = dprev
+        
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -307,6 +334,8 @@ class cross_entropy(object):
         # Store the loss in the variable loss provided above.                       #
         #############################################################################
         pass
+        N = feat.shape[0]
+        loss = - 1 / N * np.sum(np.log(logit[np.arange(logit.shape[0]), label]))
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -325,6 +354,8 @@ class cross_entropy(object):
         # Store the output gradients in the variable dlogit provided above.         #
         #############################################################################
         pass
+        logit[np.arange(logit.shape[0]), label] = logit[np.arange(logit.shape[0]), label] - 1
+        dlogit = logit / logit.shape[0]
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -341,6 +372,9 @@ def softmax(feat):
     # Return softmax values over the last dimension of feat.                    #
     #############################################################################
     pass
+    sum_val = np.sum(np.exp(feat), axis = 1).reshape(feat.shape[0], 1)
+    scores = np.exp(feat) / sum_val
+
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################

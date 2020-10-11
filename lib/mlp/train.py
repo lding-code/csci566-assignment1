@@ -5,6 +5,8 @@ from __future__ import print_function
 from lib.mlp.layer_utils import *
 from lib.optim import *
 
+import copy
+
 
 class CIFAR10_DataLoader(object):
     """
@@ -149,7 +151,15 @@ def train_net(data, model, loss_func, optimizer, batch_size, max_epochs,
             # pass to the network, and make a step for the optimizer.                   #
             # Store the loss to loss_hist                                               #
             #############################################################################
-            pass
+            #print("data_batch.shape = {}, iter_per_epoch = {}, max_epochs = {}, iter_start = {}, iter_end = {}".format(data_batch.shape, iters_per_epoch, max_epochs, iter_start, iter_end))
+            #print(iter)
+            output = model.forward(data_batch)
+            loss = loss_func.forward(output, labels_batch)
+            loss_hist.append(loss)
+            dloss = loss_func.backward()
+            din = model.backward(dloss)
+            optimizer.step()
+            #print("propagation finished")
             #############################################################################
             #                             END OF YOUR CODE                              #
             #############################################################################
@@ -166,7 +176,8 @@ def train_net(data, model, loss_func, optimizer, batch_size, max_epochs,
         # compute_acc method, store the results to train_acc and val_acc,           #
         # respectively                                                              #
         #############################################################################
-        pass
+        train_acc = compute_acc(model, data_train, labels_train)
+        val_acc = compute_acc(model, data_val, labels_val)
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -179,7 +190,9 @@ def train_net(data, model, loss_func, optimizer, batch_size, max_epochs,
             # TODO: Save the optimal parameters to opt_params variable by name using    #
             # model.net.gather_params method                                            #
             #############################################################################
-            pass
+            opt_val_acc = val_acc
+            model.net.gather_params()
+            opt_params = copy.deepcopy(model.net.params)            
             #############################################################################
             #                             END OF YOUR CODE                              #
             #############################################################################
